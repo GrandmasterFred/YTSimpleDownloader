@@ -1,6 +1,4 @@
 # lists files to ignore 
-ffmpeg.exe
-youtube-dlp.exe 
-yt-dlp.exe 
 YTAutoDownloads/
+sandbox.bat
 
