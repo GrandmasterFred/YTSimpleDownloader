@@ -5,9 +5,6 @@
 
 call:programIntro
 
-:: setting current directory 
-set oriCD=%cd%
-
 :: asks for youtube link (currently does not check if it is valid or not, might want to make it check), checks whether link is 
 :: entered, and then clears error level regardless (using call )
 set /p link="Enter YT link: "
@@ -31,11 +28,23 @@ if %live%==y (
 if %live%==n (
 	call:fancyText "set as non scheduled (assume vod)")
 if NOT %live%==n if NOT %live%==y (
-	call:fancyText "set as non scheduled (assume vod)" & set live=n)
+	call:fancyText "invalid option, defaulting as non scheduled (assume vod)" & set live=n)
 :skip
 call 
 
-cd %cd%\dependencies
+:: this section will copy all the dependencies into a file of its own, and do all the downloading in there 
+:: checks for downloads folder and create or cd into it 
+echo checking for downloads folder in %cd%
+if NOT EXIST "%cd%\downloads" (echo Downloads folder does not exist, making it & md "%cd%\downloads")
+:: copy stuff from dependencies into a dedicated folder, this is so that if there are multiple instances of this program running, it wont cause conflicts probably maybe hopefully, cause this was an issue when downloading a playlist and a standalone video before this commit 
+set var1=%time::=_%
+set var1=%var1:.=_%
+set var2=%date:/=_%
+set outputVar=downloadOutput%var2%__%var1%
+md "%cd%\downloads\%outputVar%" 
+xcopy /s "%cd%\dependencies" "%cd%\downloads\%outputVar%" 
+cd %cd%\downloads\%outputVar%
+
 :: uses yt-dlp to download the files needed, i can probably also make this use yt-archive to make it so that it can catch streams after they started
 if %live%==y (goto isLive) 
 if %live%==n (goto isNotLive)
@@ -50,16 +59,18 @@ call:fancyText "Using link: %link% And converting into format: %format%", "Start
 yt-dlp -f best --merge-output-format %format% --wait-for-video 1-10 %link%
 goto afterLive
 
+:: just something to skip to if not :isNotLive will run through :isLive
 :afterLive
 
-
-:: this section moves the made file into a downloads folder, checks if file is downloaded, and if folder exists or not 
-if NOT exist "%cd%\*.%format%" (echo Download failed & goto a)
-if exist "%oriCD%\YTAutoDownloads\" (echo Moving file to downloads) else (echo Creating downloads folder & md "%oriCD%\YTAutoDownloads")
-move /Y "%cd%\*.%format%" "%oriCD%\YTAutoDownloads"
+:: this section checks for whether the downloaded file exists or not, and removes the dependencies from the output folder 
+if NOT exist "*.%format%" (echo Download failed & goto a)
+call:fancyText "Removing dependencie files from downloaded folder"
+del "*.exe"
 call:fancyText "Download completed and moved"
 
-if %ERRORLEVEL% == 0 (echo Program is probably successeful) else (echo echo Error thrown somewhere, program exiting)
+if %ERRORLEVEL% == 0 (
+	call:fancyText "Program is probably successeful") else (
+		call:fancyText "Error thrown somewhere, program exiting")
 pause
 goto exit
 
