@@ -1,4 +1,9 @@
 # lists files to ignore 
 YTAutoDownloads/
 sandbox.bat
+ffmpeg.exe
+yt-dlp.exe
+.ffmpeg
+.yt-dlp
+downloads
 
